@@ -700,39 +700,12 @@ class BreezBridge {
     logger.log.info("copyBreezConfig finished");
   }
 
-  Future _invokeMethodWhenReady(String methodName, [dynamic arguments]) {
-    return _readyCompleter.future.then((completed) {
-      return _methodChannel
-          .invokeMethod(methodName, arguments)
-          .catchError((err) {
-        if (err.runtimeType == PlatformException) {
-          throw (err as PlatformException).message;
-        }
-        throw err;
-      });
-    });
-  }
-
   Future enableAccount(bool enabled) {
     return _invokeMethodWhenReady("enableAccount", {"argument": enabled});
   }
 
   Future<String> backupFiles() {
     return _invokeMethodWhenReady("backupFiles").then((res) => res as String);
-  }
-
-  Future _invokeMethodImmediate(String methodName, [dynamic arguments]) {
-    return _startedCompleter.future.then((completed) {
-      return _methodChannel
-          .invokeMethod(methodName, arguments)
-          .catchError((err) {
-        if (err.runtimeType == PlatformException) {
-          print("Error in calling method " + methodName);
-          throw (err as PlatformException).message;
-        }
-        throw err;
-      });
-    });
   }
 
   Future<List<String>> getWalletDBpFilePath() async {
@@ -749,4 +722,42 @@ class BreezBridge {
     result.add('$lndDir/data/chain/bitcoin/$network/wallet.db');
     return result;
   }
+
+  Future enableOrDisableTor(bool enabled) {
+    return _invokeMethodWhenReady('enableOrDisableTor', {'argument': enabled});
+  }
+
+  Future<bool> isTorActive() {
+    return _invokeMethodImmediate('isTorActive')
+        .then((result) => result as bool);
+  }
+
+  Future _invokeMethodWhenReady(String methodName, [dynamic arguments]) {
+    return _readyCompleter.future.then((completed) {
+      return _methodChannel
+          .invokeMethod(methodName, arguments)
+          .catchError((err) {
+        if (err.runtimeType == PlatformException) {
+          throw (err as PlatformException).message;
+        }
+        throw err;
+      });
+    });
+  }
+
+  Future _invokeMethodImmediate(String methodName, [dynamic arguments]) {
+    return _startedCompleter.future.then((completed) {
+      return _methodChannel
+          .invokeMethod(methodName, arguments)
+          .catchError((err) {
+        if (err.runtimeType == PlatformException) {
+          print("Error in calling method " + methodName);
+          throw (err as PlatformException).message;
+        }
+        throw err;
+      });
+    });
+  }
+
+
 }
