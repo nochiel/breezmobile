@@ -53,6 +53,15 @@ class Breez : NSObject, FlutterPlugin, BindingsAppServicesProtocol, FlutterStrea
             initBreez(call: call, result: result);
             return;
         }
+
+
+/*
+	if(call.method == "start") {
+	    start(call: call, result: result);
+	    return;
+	}
+*/
+
         
         if (call.method == "setBackupProvider") {
             setBackupProvider(call: call, result: result);
@@ -102,7 +111,25 @@ class Breez : NSObject, FlutterPlugin, BindingsAppServicesProtocol, FlutterStrea
         }
         result(FlutterError(code: "Missing Argument", message: "Expecting a dictionary", details: nil));
     }
-    
+
+/*
+    func start(call: FlutterMethodCall, result: @escaping FlutterResult) {
+	if let args = call.arguments as? [String: Any] {
+	    if let data = args["torConfig"] as? FlutterStandardTypedData {
+		var err : NSError?;
+		BindingsStart(data.data, &err);
+		if (err != nil) {
+		    result(FlutterError(code: "Startup Error", message: err?.localizedDescription, details: ""));
+		    return;
+		}
+		result(true);
+	    }
+	}
+
+	result(FlutterError(code: "Missing Argument", message: "Expecting a dictionary", details: nil));
+    }
+*/
+
     func log(call: FlutterMethodCall, result: @escaping FlutterResult){
         if let args = call.arguments as? Dictionary<String,Any> {
             let msg : String = args["msg"] as! String;
