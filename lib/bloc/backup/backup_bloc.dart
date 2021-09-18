@@ -354,6 +354,10 @@ class BackupBloc {
     });
   }
 
+  Future testAuth(String provider, RemoteServerAuthData authData) {
+      return _breezLib.testBackupAuth(provider, json.encode(authData.toJson()));
+  }
+
   close() {
     _backupNowController.close();
     _restoreRequestController.close();

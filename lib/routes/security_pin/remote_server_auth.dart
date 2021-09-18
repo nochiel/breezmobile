@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:breez/bloc/backup/backup_actions.dart';
 import 'package:breez/bloc/backup/backup_bloc.dart';
 import 'package:breez/bloc/backup/backup_model.dart';
+import 'package:breez/bloc/tor/bloc.dart';
 import 'package:breez/bloc/blocs_provider.dart';
 import 'package:breez/routes/podcast/theme.dart';
 import 'package:breez/widgets/back_button.dart' as backBtn;
@@ -10,6 +10,7 @@ import 'package:breez/widgets/error_dialog.dart';
 import 'package:breez/widgets/loader.dart';
 import 'package:breez/widgets/route.dart';
 import 'package:breez/widgets/single_button_bottom_bar.dart';
+import 'package:breez/logger.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:validators/validators.dart';
@@ -20,9 +21,10 @@ Future<RemoteServerAuthData> promptAuthData(BuildContext context,
   return Navigator.of(context).push<RemoteServerAuthData>(FadeInRoute(
     builder: (BuildContext context) {
       final backupBloc = AppBlocsProvider.of<BackupBloc>(context);
+      final torBloc = AppBlocsProvider.of<TorBloc>(context);
       return withBreezTheme(
         context,
-        RemoteServerAuthPage(backupBloc, restore),
+        RemoteServerAuthPage(backupBloc, torBloc, restore),
       );
     },
   ));
@@ -31,10 +33,11 @@ Future<RemoteServerAuthData> promptAuthData(BuildContext context,
 const String BREEZ_BACKUP_DIR = "DO_NOT_DELETE_Breez_Backup";
 
 class RemoteServerAuthPage extends StatefulWidget {
-  RemoteServerAuthPage(this._backupBloc, this.restore);
+  RemoteServerAuthPage(this._backupBloc, this._torBloc, this.restore);
 
   final String _title = "Remote Server";
   final BackupBloc _backupBloc;
+  final TorBloc _torBloc;
   final bool restore;
 
   @override
@@ -115,6 +118,11 @@ class RemoteServerAuthPageState extends State<RemoteServerAuthPage> {
                                   minLines: 1,
                                   maxLines: 1,
                                   validator: (value) {
+                                    Uri uri = Uri.parse(value);
+                                    if (!uri.hasScheme) {
+                                      return "This URL must be http or https.";
+                                    }
+
                                     var validURL = isURL(value,
                                         protocols: ['https', 'http'],
                                         requireProtocol: true,
@@ -261,21 +269,42 @@ class RemoteServerAuthPageState extends State<RemoteServerAuthPage> {
   }
 
   Future<DiscoverResult> testAuthData(RemoteServerAuthData authData) async {
+    log.info('remote_server_auth.dart: testAuthData');
     try {
-      var client = webdav.newClient(
-        authData.url,
-        user: authData.user,
-        password: authData.password,
-        debug: true,
-      );
-      await client.readDir("/");
+      if (widget._torBloc.torConfig != null) {
+        await widget._backupBloc
+            .testAuth(BackupSettings.remoteServerBackupProvider.name, authData);
+
+        /* findProxy will only work for https but will not work for onion hidden services or http.
+        final http = widget._torBloc.torConfig.http;
+        (client.c.httpClientAdapter as DefaultHttpClientAdapter)
+            .onHttpClientCreate = (client) {
+          client.findProxy = (uri) {
+              print('client.findProxy: $uri');
+            return 'PROXY localhost:${http}';
+          };
+        };
+        */
+      } else {
+        var client = webdav.newClient(
+          authData.url,
+          user: authData.user,
+          password: authData.password,
+          debug: true,
+        );
+        await client.readDir("/");
+      }
     } on DioError catch (e) {
       if (e.response != null &&
           (e.response.statusCode == 401 || e.response.statusCode == 403)) {
         return DiscoverResult.INVALID_AUTH;
       }
       return DiscoverResult.INVALID_URL;
+    } catch (e) {
+      log.warning('remote_server_auth.dart: testAuthData: $e');
+      return DiscoverResult.INVALID_URL;
     }
+
     return DiscoverResult.SUCCESS;
   }
 }
