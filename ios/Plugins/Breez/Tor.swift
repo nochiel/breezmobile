@@ -81,7 +81,6 @@ class Tor : NSObject, FlutterPlugin {
             "--allow-missing-torrc",
         ];
 
-
         if let cookieUrl = configuration.dataDirectory?.appendingPathComponent("control_auth_cookie") {
             cookie = try? Data(contentsOf: cookieUrl);
         }
@@ -95,19 +94,17 @@ class Tor : NSObject, FlutterPlugin {
             // TODO(nochiel) TorInstallLoggingCallback using the breez logger?
             print("Tor.swift: returning config.");
             let config = [
-                "SOCKS"	: "127.0.0.1:\(socksPort)",
-                "Control"	: "127.0.0.1:\(controlPort)",
-                "HTTP"	: "127.0.0.1:\(httpPort)",
+                "SOCKS"	    : "127.0.0.1:\(socksPort)",
+                "Control"   : "127.0.0.1:\(controlPort)",
+                "HTTP"	    : "127.0.0.1:\(httpPort)",
             ];
             result(config);
             return;
 
-
         }
-
     }
 
-    deinit() {
+    deinit {
         torController = nil;
         torThread = nil;
         cookie = nil;
