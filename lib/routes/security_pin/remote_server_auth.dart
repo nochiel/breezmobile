@@ -272,6 +272,7 @@ class RemoteServerAuthPageState extends State<RemoteServerAuthPage> {
     log.info('remote_server_auth.dart: testAuthData');
     try {
       if (widget._torBloc.torConfig != null) {
+          log.info('remote_server_auth.dart: testing using tor.');
         await widget._backupBloc
             .testAuth(BackupSettings.remoteServerBackupProvider.name, authData);
 

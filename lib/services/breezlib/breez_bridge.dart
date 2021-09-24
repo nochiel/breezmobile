@@ -682,6 +682,7 @@ class BreezBridge {
   }
 
   Future testBackupAuth(String provider, String authData) {
+      logger.log.info('breez_bridge.dart: testBackupAuth');
     return _methodChannel.invokeMethod(
         'testBackupAuth', {'provider': provider, 'authData': authData});
   }

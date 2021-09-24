@@ -41,7 +41,7 @@ class Tor : NSObject, FlutterPlugin {
 
         let socksPort: UInt16	= 19150;
         let httpPort: UInt16	= 19151;
-        let dnsPort: UInt16	= 19153;
+        let dnsPort: UInt16	= 19152;
         let controlPort: UInt16	= 19160;
 
         let configuration = TorConfiguration();
@@ -57,11 +57,14 @@ class Tor : NSObject, FlutterPlugin {
             // "SocksPort": "auto",
             // "ControlPort" : "auto",
             // "HTTPTunnelPort" : "auto",
+            // "DNSPort": "auto",
             "SocksPort": "\(socksPort)",
             "ControlPort" : "\(controlPort)",
             "HTTPTunnelPort" : "\(httpPort)",
             "DNSPort": "\(dnsPort)",
-        ]; configuration.cookieAuthentication = true;
+        ]; 
+        
+        configuration.cookieAuthentication = true;
 
         if let dataDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("tor", isDirectory: true) {
             try? FileManager.default.removeItem(at: dataDirectory);
@@ -73,23 +76,48 @@ class Tor : NSObject, FlutterPlugin {
                 return;
             };
             configuration.dataDirectory = dataDirectory;
-            // configuration.controlSocket = configuration.dataDirectory!.appendingPathComponent("control_port");
+            // configuration.controlSocket = dataDirectory.appendingPathComponent("control_port");
         };
 
+        /*
         configuration.arguments = [
             "--ignore-missing-torrc",
             "--allow-missing-torrc",
         ];
+         */
 
-        if let cookieUrl = configuration.dataDirectory?.appendingPathComponent("control_auth_cookie") {
-            cookie = try? Data(contentsOf: cookieUrl);
-        }
 
         torThread = TorThread(configuration: configuration);
         torThread?.start();
-        print("Tor.swift: startTor: Starting tor thread.");
+        print("Tor.swift: startTor: rtarting tor thread.");
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+
+            // self.torController = TorController(socketURL: configuration.controlSocket!);
+            /*
+            self.torController = TorController(socketHost: "127.0.0.1", port: controlPort);
+            do {
+                // FIXME(nochiel) This fails on iOS with a "Foundation._GenericObjCError error 0". 
+                // I'm not sure why but if we needed the controller it would have to 
+                // be fixed here.
+                try self.torController?.connect();
+            } catch let error {
+                result(FlutterError(code: "TorError", message: "Breez could not connect to the Tor controller: \(error.localizedDescription)", details: ""));
+            }
+            */
+
+            /*
+            let cookieUrl = configuration.dataDirectory?.appendingPathComponent("control_auth_cookie") ;
+            self.cookie = try? Data(contentsOf: cookieUrl!);
+            self.torController?.authenticate(with: self.cookie?) { success, error in 
+                if let error = error {
+                    result(FlutterError(code: "TorError", message: error.localizedDescription, details: ""));
+                    return;
+                }
+            }
+            */
+
+
 
             // TODO(nochiel) TorInstallLoggingCallback using the breez logger?
             print("Tor.swift: returning config.");
